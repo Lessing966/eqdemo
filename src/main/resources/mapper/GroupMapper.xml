@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lessing.equipment.modules.sys.dao.GroupDao" >
+
+    <select id="selectArchitecList" parameterType="com.lessing.equipment.modules.sys.dto.ArchitecDTO" resultType="com.lessing.equipment.modules.sys.entity.GroupEntity">
+        select * from sys_group
+        <where>
+        <if test="architec.gName != null and architec.gName != ''">and name like concat('%',#{architec.gName},'%')</if>
+        and status = 0
+        </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lessing.equipment.modules.eq.dao.EqScaleDao" >
+
+    <select id="selectByeqId" parameterType="string" resultType="com.lessing.equipment.modules.eq.entity.EqScaleEntity">
+        select * from eq_scale where id &lt;= #{location}
+    </select>
+
+    <select id="selectEqList" parameterType="com.lessing.equipment.modules.eq.dto.EqListDTO" resultType="com.lessing.equipment.modules.eq.dto.EqListDTO">
+        SELECT
+        eq.eq_id id,
+        eq.camera_sn sn,
+        eq.ip ip,
+        eq.username,
+        eq.`password`,
+        p.`name` pname,
+        p.address paddress,
+        eq.eq_status status,
+        eq.note note
+        FROM
+        sys_eq eq
+        LEFT JOIN sys_project p ON eq.p_id = p.id
+        <where>
+            <if test="entity.sn != null and entity.sn != ''">and eq.camera_sn like concat('%',#{entity.sn},'%') </if>
+            <if test="entity.status != null and entity.status != ''">and eq.eq_status =#{entity.status} </if>
+            <if test="entity.pname != null and entity.pname != ''">and p.name like concat('%',#{entity.pname},'%')</if>
+        </where>
+    </select>
+
+    <update id="updateByIp" parameterType="string">
+        update sys_eq set url =#{url} where ip =#{ip} and eq_status = 0
+    </update>
+
+    <select id="selectgetEq" parameterType="string" resultType="com.lessing.equipment.modules.eq.entity.EqEntity">
+        SELECT
+            e.camera_sn cameraSn,
+            p.address pAddress
+        FROM
+            sys_eq e
+                LEFT JOIN sys_project p  on e.p_id = p.id
+        WHERE
+            e.ip =#{ip}
+    </select>
+</mapper>

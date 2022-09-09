@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lessing.equipment.modules.sys.dao.SysUserDao" >
+
+    <select id="selectUserList" parameterType="com.lessing.equipment.modules.sys.dto.UserListDTO" resultType="com.lessing.equipment.modules.sys.dto.UserListDTO">
+        SELECT
+        u.id,
+        u.user_name,
+        u.login_name,
+        u.role,
+        u.`code`,
+        u.phone,
+        g.id gid,
+        g.`name` gname,
+        ( SELECT id FROM sys_company WHERE id = u.companyone_id AND company_id = 0 ) oneid,
+        ( SELECT NAME FROM sys_company WHERE id = u.companyone_id AND company_id = 0 ) onename,
+        c.id twoid,
+        c.`name` twoname,
+        d.id did,
+        d.`name` dname,
+        u.`status`
+        FROM
+        sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.id
+        LEFT JOIN sys_company c ON u.companytwo_id = c.id
+        LEFT JOIN sys_group g ON u.group_id = g.id
+        <where>
+            <if test="user.userName != null and user.userName != '' ">and u.user_name like concat('%',#{user.userName},'%')</if>
+            <if test="user.status != null">and u.`status` =#{user.status}</if>
+        </where>
+--         SELECT
+--         u.id,
+--         u.user_name,
+--         u.login_name,
+--         u.`code`,
+--         u.phone,
+--         g.id gid,
+--         g.`name` gname,
+--         ( SELECT id FROM sys_company WHERE id = c.company_id AND company_id = 0 ) oneid,
+--         ( SELECT NAME FROM sys_company WHERE id = c.company_id AND company_id = 0 ) onename,
+--         c.id twoid,
+--         c.`name` twoname,
+--         d.id did,
+--         d.`name` dname,
+--         u.`status`
+--         FROM
+--         sys_user u
+--         LEFT JOIN sys_dept d ON u.dept_id = d.id
+--         LEFT JOIN sys_company c ON d.company_id = c.id
+--         LEFT JOIN sys_group g ON c.group_id = g.id
+    </select>
+
+    <select id="selectUserOne" parameterType="int" resultType="com.lessing.equipment.modules.sys.dto.UserListDTO">
+        SELECT
+            u.id,
+            u.user_name,
+            u.role,
+            u.login_name,
+            u.`code`,
+            u.phone,
+            g.`name` gname,
+            ( SELECT NAME FROM sys_company WHERE id IN ( c.company_id ) ) onename,
+            c.`name` twoname,
+            d.`name` dname,
+            u.`status`
+        FROM
+            sys_user u
+                LEFT JOIN sys_dept d ON u.dept_id = d.id
+                LEFT JOIN sys_company c ON u.companytwo_id = c.id
+                LEFT JOIN sys_group g ON u.group_id = g.id
+        WHERE
+            u.`status` = 0
+          AND u.id = #{uid}
+    </select>
+
+    <select id="selectUser" parameterType="integer" resultType="com.lessing.equipment.modules.sys.dto.UserNameDTO">
+        select id,user_name from sys_user where dept_id = #{did}
+    </select>
+
+    <select id="selectEq" resultType="com.lessing.equipment.modules.sys.dto.CameraDTO">
+        SELECT
+            e.eq_id id,
+            e.camera_sn sn,
+            p.`name`,
+            p.address,
+            p.head,
+            p.hon,
+            p.username
+        FROM
+            sys_eq e
+                LEFT JOIN sys_project p ON e.p_id = p.id
+    </select>
+
+    <select id="selectByArchitrue" resultType="com.lessing.equipment.modules.sys.dto.UserNameDTO" parameterType="com.lessing.equipment.modules.sys.dto.ArchitecDTO">
+        select * from sys_user
+        <where>
+            <if test="gid != null">and group_id = #{gid}</if>
+            <if test="companyoneId != null">and companyone_id = #{companyoneId}</if>
+            <if test="companytwoId != null">and companytwo_id = #{companytwoId}</if>
+            <if test="did != null">and dept_id = #{did}</if>
+            and status = 0
+        </where>
+    </select>
+
+    <update id="updateByMapper" parameterType="com.lessing.equipment.modules.sys.entity.UserEntity">
+        update sys_user
+        <trim prefix="set" suffixOverrides=",">
+            <if test="password !=null and password !='' "> password=#{password},</if>
+            <if test="num !=null">num =#{num},</if>
+            <if test="headpg!=null and headpg !=''"> headpg=#{headpg},</if>
+            <if test="updateTime !=null "> update_time=#{updateTime},</if>
+        </trim>
+        WHERE id=#{id}
+    </update>
+
+</mapper>

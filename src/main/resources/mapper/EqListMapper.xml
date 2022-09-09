@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lessing.equipment.modules.eq.dao.EqDao" >
+
+    <select id="selectEqList" parameterType="string" resultType="com.lessing.equipment.modules.eq.entity.EqEntity">
+        select * from sys_eq
+        <where>
+            <if test="pid != null and pid !=''">and p_id =#{pid}</if>
+            <if test="eSn != null and eSn !=''">and camera_sn like concat('%',#{eSn},'%')</if>
+            and eq_status = 0
+        </where>
+    </select>
+
+</mapper>
