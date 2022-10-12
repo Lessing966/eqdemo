@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lessing.equipment.common.utils.JwtUtils;
 import com.lessing.equipment.common.utils.R;
 import com.lessing.equipment.common.utils.RedisUtils;
+import com.lessing.equipment.lib.RequestList;
 import com.lessing.equipment.modules.app.dao.AlramListDTO;
 import com.lessing.equipment.modules.app.dto.EqDTO;
 import com.lessing.equipment.modules.eq.dto.DTO;
 import com.lessing.equipment.modules.eq.dto.RtmpDTO;
+import com.lessing.equipment.modules.eq.entity.EqEntity;
 import com.lessing.equipment.modules.eq.entity.EqalrmEnyity;
 import com.lessing.equipment.modules.eq.service.EqService;
 import com.lessing.equipment.modules.sys.dto.UserRoleDTO;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -44,6 +47,8 @@ public class AppController {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private RequestList requestList;
     @Value("${openapi.rympurl}")
     String rympUrl;
 
@@ -54,6 +59,13 @@ public class AppController {
             return R.ok();
         }
         return R.error();
+    }
+
+    @ApiOperation("抓拍")
+    @RequestMapping(value = "/setDeviceSnapEnhanced",method = RequestMethod.POST)
+    public R setDeviceSnapEnhanced(@RequestBody EqEntity eq){
+        String s = requestList.DeviceSnap(eq);
+        return R.ok(s);
     }
 
     @ApiOperation("保存头像")
@@ -73,7 +85,7 @@ public class AppController {
      */
     @ApiOperation("获取摄像头列表")
     @RequestMapping(value = "/getliveList",method = RequestMethod.GET)
-    public R getliveList(String eSn ,HttpServletRequest request){
+    public R getliveList(String eSn ,HttpServletRequest request) throws IOException {
         List<EqDTO> eqEntity=null;
         UserRoleDTO user = jwtUtils.getUid(request);
         if(null != user.getRole() && user.getRole() == 0){
@@ -115,20 +127,22 @@ public class AppController {
     @ApiOperation("查看单个设备播放")
     @RequestMapping(value = "getRemp",method = RequestMethod.POST)
     public R getRemp(@RequestBody RtmpDTO rtmp){
-        //查询redis中是否有再推流的ip 如果有 就直接返回 没有就推流并放入redis
+        //查询redis中是否有再推流的ip 如果有 就直接返回 没有就推流并放入redis~
         String s = redisUtils.get(rtmp.getIp());
         DTO dto = JSONObject.parseObject(s, DTO.class);
-        if(dto.getDeviceId()!= null){
+        if(null != dto.getDeviceId()){
             return R.ok().put("data",dto);
         }
-        DTO dto1 = restTemplate.postForObject(rympUrl, rtmp, DTO.class);
-        if(null == dto1){
-            return R.error("推流失败");
-        }
+        EqEntity eq =new EqEntity();
+        eq.setDeviceid(rtmp.getDeviceid());
+        eq.setChannel("0");
+        JSONObject rtmpOne = requestList.getRtmpOne(eq);
+        dto.setUrl(rtmpOne.getString("hls"));
+        dto.setDeviceId(rtmpOne.getString("deviceId"));
         //将返回的播放地址存放
-        redisUtils.set(rtmp.getIp(),dto1);
+        redisUtils.set(rtmp.getIp(),dto);
 
-        return R.ok().put("data",dto1);
+        return R.ok().put("data",dto);
     }
 
 }

@@ -11,6 +11,7 @@ import com.lessing.equipment.modules.sys.dto.CameraDTO;
 import com.lessing.equipment.modules.sys.dto.PojNameListDTO;
 import io.swagger.models.auth.In;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface EqService {
@@ -33,18 +34,20 @@ public interface EqService {
 
     Page<EqListDTO> selectEqList(EqListDTO entity);
 
-    boolean add(EqEntity eq);
+    String add(EqEntity eq);
 
     boolean update(EqEntity eqEntity);
 
-    void delete(Integer id);
+    boolean delete(Integer id);
 
     List<EqEntity> getProjList(String uid);
 
     List<EqDTO> getProjEqList(String eSn,String uid);
 
-    List<EqDTO> getEqList(String eSn);
+    List<EqDTO> getEqList(String eSn) throws IOException;
 
     Page<EqalrmEnyity> selectAlrmList(AlramListDTO alramListDTO);
+
+    List<EqEntity> selectEqlistByRole(Integer gid,Integer one,Integer two,Integer did);
 
 }

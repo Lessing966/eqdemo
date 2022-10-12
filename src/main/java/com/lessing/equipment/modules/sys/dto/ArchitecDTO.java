@@ -31,4 +31,7 @@ public class  ArchitecDTO {
 
     @ApiModelProperty(value = "页面条数")
     private int pageSize;
+
+    //勾选
+    private Boolean isSelect;
 }

@@ -224,146 +224,186 @@ public class ArchitectureServiceImpl implements ArchitectureService {
         GroupEntity group =new GroupEntity();
         CompanyEntity company = new CompanyEntity();
         DeptEntity dept =new DeptEntity();
-        try {
-            if(architecDTO.getGid() !=null
-                    || architecDTO.getDid() !=null
-                    ||architecDTO.getCompanytwoId()!=null
-                    || architecDTO.getCompanyoneId()!=null)
-            {
-                if(!StringUtils.isEmpty(architecDTO.getGName())){
-                    //先查看集团是否存在
-                    GroupEntity groupEntity = groupDao.selectOne(new QueryWrapper<GroupEntity>()
-                            .eq("name", architecDTO.getGName()).eq("status",0));
-                    if(null == groupEntity){
-                        //如果集团为空 就进行新增 如果不为空 不会进行新增
-                        group.setName(architecDTO.getGName());
-                        group.setStatus(architecDTO.getStatus());
-                        groupDao.insert(group);
-                    }else{
-                        //如果不为空 就查询传来的集团信息
-                        group = groupDao.selectOne(new QueryWrapper<GroupEntity>()
-                                .eq("name", architecDTO.getGName()).eq("status",0));
-                    }
-                }
-                //判断一级公司是否存在
-                if(!StringUtils.isEmpty(architecDTO.getCnameOne())){
-                    CompanyEntity companyEntity = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name",architecDTO.getCnameOne())
-                            .eq("company_id",0).eq("status",0));
-                    if(null == companyEntity) {
-                        company.setName(architecDTO.getCnameOne());
-                        company.setGroupId(group.getId());
-                        company.setCompanyId(0);
-                        company.setStatus(architecDTO.getStatus());
-                        companyDao.insert(company);
-                    }else {
-                        companyEntity.setGroupId(group.getId());
-                        companyEntity.setId(architecDTO.getCompanyoneId());
-                        companyEntity.setStatus(architecDTO.getStatus());
-                        companyDao.updateById(companyEntity);
-                        company =companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name",architecDTO.getCnameOne())
-                                .eq("company_id",0).eq("status",0));
-                    }
-                }
-                //二级公司
-                if(!StringUtils.isEmpty(architecDTO.getCnameTwo())){
-                    CompanyEntity compan = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
-                            .eq("name",architecDTO.getCnameTwo()).eq("status",0));
-                    if(null == compan) {
-                        company.setName(architecDTO.getCnameTwo());
-                        company.setGroupId(group.getId());
-                        company.setCompanyId(company.getId());
-                        company.setStatus(architecDTO.getStatus());
-                        companyDao.insert(company);
-                    }else {
-                        compan.setGroupId(group.getId());
-                        compan.setCompanyId(company.getId());
-                        compan.setId(architecDTO.getCompanytwoId());
-                        compan.setStatus(architecDTO.getStatus());
-                        companyDao.updateById(compan);
-                        company =companyDao.selectOne(new QueryWrapper<CompanyEntity>()
-                                .eq("name",architecDTO.getCnameTwo()).eq("status",0));
-                    }
-                }
-                //部门校验
-                if(!StringUtils.isEmpty(architecDTO.getDeptName())){
-                    DeptEntity deptEntity = deptDao.selectOne(new QueryWrapper<DeptEntity>()
-                            .eq("name", architecDTO.getDeptName()).eq("status", 0));
-                    if(null == deptEntity){
-                        dept.setCompanyId(company.getId());
-                        dept.setName(architecDTO.getDeptName());
-                        dept.setStatus(architecDTO.getStatus());
-                        deptDao.insert(dept);
-                    }else {
-                        deptEntity.setCompanyId(company.getId());
-                        deptEntity.setId(architecDTO.getDid());
-                        deptEntity.setStatus(architecDTO.getStatus());
-                        deptDao.updateById(deptEntity);
-                    }
-                }
-            }else {
-                if(!StringUtils.isEmpty(architecDTO.getGName())){
-                    //先查看集团是否存在
-                    GroupEntity groupEntity = groupDao.selectOne(new QueryWrapper<GroupEntity>()
-                            .eq("name", architecDTO.getGName()).eq("status",0));
-                    if(null == groupEntity){
-                        //如果集团为空 就进行新增 如果不为空 不会进行新增
-                        group.setName(architecDTO.getGName());
-                        group.setStatus(architecDTO.getStatus());
-                        groupDao.insert(group);
-                    }else{
-                        //如果不为空 就查询传来的集团信息
-                        group = groupDao.selectOne(new QueryWrapper<GroupEntity>()
-                                .eq("name", architecDTO.getGName()).eq("status",0));
-                    }
-                }
-                //判断一级公司是否存在
-                if(!StringUtils.isEmpty(architecDTO.getCnameOne())){
-                    CompanyEntity companyEntity = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name",architecDTO.getCnameOne())
-                            .eq("company_id",0).eq("status",0));
-                    if(null == companyEntity) {
-                        company.setName(architecDTO.getCnameOne());
-                        company.setGroupId(group.getId());
-                        company.setCompanyId(0);
-                        company.setStatus(architecDTO.getStatus());
-                        companyDao.insert(company);
-                    }else {
-                        company =companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name",architecDTO.getCnameOne())
-                                .eq("company_id",0).eq("status",0));
-                    }
-                }
-                //二级公司
-                if(!StringUtils.isEmpty(architecDTO.getCnameTwo())){
-                    CompanyEntity compan = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
-                            .eq("name",architecDTO.getCnameTwo()).eq("status",0));
-                    if(null == compan) {
-                        company.setName(architecDTO.getCnameTwo());
-                        company.setGroupId(group.getId());
-                        company.setCompanyId(company.getId());
-                        company.setStatus(architecDTO.getStatus());
-                        companyDao.insert(company);
-                    }else {
-                        company =companyDao.selectOne(new QueryWrapper<CompanyEntity>()
-                                .eq("name",architecDTO.getCnameTwo()).eq("status",0));
-                    }
-                }
-                //部门校验
-                if(!StringUtils.isEmpty(architecDTO.getDeptName())){
-                    DeptEntity deptEntity = deptDao.selectOne(new QueryWrapper<DeptEntity>()
-                            .eq("name", architecDTO.getDeptName()).eq("status", 0));
-                    if(null == deptEntity){
-                        dept.setCompanyId(company.getId());
-                        dept.setName(architecDTO.getDeptName());
-                        dept.setStatus(architecDTO.getStatus());
-                        deptDao.insert(dept);
-                    }
-                }
+
+        if(architecDTO.getIsSelect()){
+            Integer gid = architecDTO.getGid() != null ? architecDTO.getGid() : null;
+            Integer companyoneId = architecDTO.getCompanyoneId();
+            Integer companytwoId = architecDTO.getCompanytwoId();
+            Integer did = architecDTO.getDid();
+            //
+            if(StringUtils.isEmpty(architecDTO.getCnameOne())){
+                companyoneId=null;
+            }else if(companyoneId==null){  //新添且有值  先存再拿ID
+                company.setName(architecDTO.getCnameOne());
+                company.setCompanyId(0);
+                company.setGroupId(gid);
+                company.setStatus(architecDTO.getStatus());
+                companyDao.insert(company);
+                companyoneId = company.getId();
             }
-            return true;
-        }catch (Exception e){
-            e.printStackTrace();
-            return false;
+            //
+            if(StringUtils.isEmpty(architecDTO.getCnameTwo())){
+                companytwoId=null;
+            }else if(companytwoId==null){  //新添且有值  先存再拿ID
+                company.setName(architecDTO.getCnameTwo());
+                company.setCompanyId(companyoneId);
+                company.setGroupId(gid);
+                company.setStatus(architecDTO.getStatus());
+                companyDao.insert(company);
+                companytwoId = company.getId();
+            }
+            if(StringUtils.isEmpty(architecDTO.getDeptName())){
+
+            }else if(did==null){  //新添且有值  先存再拿ID
+                dept.setCompanyId(companytwoId);
+                dept.setName(architecDTO.getDeptName());
+                dept.setStatus(architecDTO.getStatus());
+                deptDao.insert(dept);
+            }
+        }else {
+            try {
+                if (architecDTO.getGid() != null
+                        || architecDTO.getDid() != null
+                        || architecDTO.getCompanytwoId() != null
+                        || architecDTO.getCompanyoneId() != null) {
+                    if (!StringUtils.isEmpty(architecDTO.getGName())) {
+                        //先查看集团是否存在
+                        GroupEntity groupEntity = groupDao.selectOne(new QueryWrapper<GroupEntity>()
+                                .eq("name", architecDTO.getGName()).eq("status", 0));
+                        if (null == groupEntity) {
+                            //如果集团为空 就进行新增 如果不为空 不会进行新增
+                            group.setName(architecDTO.getGName());
+                            group.setStatus(architecDTO.getStatus());
+                            groupDao.insert(group);
+                        } else {
+                            //如果不为空 就查询传来的集团信息
+                            group = groupDao.selectOne(new QueryWrapper<GroupEntity>()
+                                    .eq("name", architecDTO.getGName()).eq("status", 0));
+                        }
+                    }
+                    //判断一级公司是否存在
+                    if (!StringUtils.isEmpty(architecDTO.getCnameOne())) {
+                        CompanyEntity companyEntity = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name", architecDTO.getCnameOne())
+                                .eq("company_id", 0).eq("group_id", group.getId()).eq("status", 0));
+                        if (null == companyEntity) {
+                            company.setName(architecDTO.getCnameOne());
+                            company.setGroupId(group.getId());
+                            company.setCompanyId(0);
+                            company.setStatus(architecDTO.getStatus());
+                            companyDao.insert(company);
+                        } else {
+                            companyEntity.setGroupId(group.getId());
+                            companyEntity.setId(architecDTO.getCompanyoneId());
+                            companyEntity.setStatus(architecDTO.getStatus());
+                            companyDao.updateById(companyEntity);
+                            company = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name", architecDTO.getCnameOne())
+                                    .eq("group_id", group.getId()).eq("company_id", 0).eq("status", 0));
+                        }
+                    }
+                    //二级公司
+                    if (!StringUtils.isEmpty(architecDTO.getCnameTwo())) {
+                        CompanyEntity compan = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
+                                .eq("name", architecDTO.getCnameTwo()).eq("company_id", company.getId()).eq("status", 0));
+                        if (null == compan) {
+                            company.setName(architecDTO.getCnameTwo());
+                            company.setGroupId(group.getId());
+                            company.setCompanyId(company.getId());
+                            company.setStatus(architecDTO.getStatus());
+                            companyDao.insert(company);
+                        } else {
+                            compan.setGroupId(group.getId());
+                            compan.setCompanyId(company.getId());
+                            compan.setId(architecDTO.getCompanytwoId());
+                            compan.setStatus(architecDTO.getStatus());
+                            companyDao.updateById(compan);
+                            company = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
+                                    .eq("name", architecDTO.getCnameTwo()).eq("company_id", company.getId()).eq("status", 0));
+                        }
+                    }
+                    //部门校验
+                    if (!StringUtils.isEmpty(architecDTO.getDeptName())) {
+                        DeptEntity deptEntity = deptDao.selectOne(new QueryWrapper<DeptEntity>()
+                                .eq("name", architecDTO.getDeptName()).eq("company_id", company.getId()).eq("status", 0));
+                        if (null == deptEntity) {
+                            dept.setCompanyId(company.getId());
+                            dept.setName(architecDTO.getDeptName());
+                            dept.setStatus(architecDTO.getStatus());
+                            deptDao.insert(dept);
+                        } else {
+                            deptEntity.setCompanyId(company.getId());
+                            deptEntity.setId(architecDTO.getDid());
+                            deptEntity.setStatus(architecDTO.getStatus());
+                            deptDao.updateById(deptEntity);
+                        }
+                    }
+                } else {
+                    if (!StringUtils.isEmpty(architecDTO.getGName())) {
+                        //先查看集团是否存在
+                        GroupEntity groupEntity = groupDao.selectOne(new QueryWrapper<GroupEntity>()
+                                .eq("name", architecDTO.getGName()).eq("status", 0));
+                        if (null == groupEntity) {
+                            //如果集团为空 就进行新增 如果不为空 不会进行新增
+                            group.setName(architecDTO.getGName());
+                            group.setStatus(architecDTO.getStatus());
+                            groupDao.insert(group);
+                        } else {
+                            //如果不为空 就查询传来的集团信息
+                            group = groupDao.selectOne(new QueryWrapper<GroupEntity>()
+                                    .eq("name", architecDTO.getGName()).eq("status", 0));
+                        }
+                    }
+                    //判断一级公司是否存在
+                    if (!StringUtils.isEmpty(architecDTO.getCnameOne())) {
+                        CompanyEntity companyEntity = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name", architecDTO.getCnameOne())
+                                .eq("group_id", group.getId()).eq("status", 0));
+//                    .eq("company_id",0)
+                        if (null == companyEntity) {
+                            company.setName(architecDTO.getCnameOne());
+                            company.setGroupId(group.getId());
+                            company.setCompanyId(0);
+                            company.setStatus(architecDTO.getStatus());
+                            companyDao.insert(company);
+                        } else {
+                            company = companyDao.selectOne(new QueryWrapper<CompanyEntity>().eq("name", architecDTO.getCnameOne())
+                                    .eq("group_id", group.getId()).eq("status", 0));
+                        }
+                    }
+                    //二级公司
+                    if (!StringUtils.isEmpty(architecDTO.getCnameTwo())) {
+                        CompanyEntity compan = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
+                                .eq("company_id", group.getId()).eq("name", architecDTO.getCnameTwo()).eq("status", 0));
+                        if (null == compan) {
+                            company.setName(architecDTO.getCnameTwo());
+                            company.setGroupId(group.getId());
+                            company.setCompanyId(company.getId());
+                            company.setStatus(architecDTO.getStatus());
+                            companyDao.insert(company);
+                        } else {
+                            company = companyDao.selectOne(new QueryWrapper<CompanyEntity>()
+                                    .eq("company_id", group.getId()).eq("name", architecDTO.getCnameTwo()).eq("status", 0));
+                        }
+                    }
+                    //部门校验
+                    if (!StringUtils.isEmpty(architecDTO.getDeptName())) {
+                        DeptEntity deptEntity = deptDao.selectOne(new QueryWrapper<DeptEntity>()
+                                .eq("company_id", group.getId()).eq("name", architecDTO.getDeptName()).eq("status", 0));
+                        if (null == deptEntity) {
+                            dept.setCompanyId(company.getId());
+                            dept.setName(architecDTO.getDeptName());
+                            dept.setStatus(architecDTO.getStatus());
+                            deptDao.insert(dept);
+                        }
+                    }
+                }
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
+        return true;
     }
+
 
 
 //    @Override
@@ -620,7 +660,11 @@ public class ArchitectureServiceImpl implements ArchitectureService {
     public List<DeptEntity> getDeptListAll() {
         List<DeptEntity> status = deptDao.selectList(new QueryWrapper<DeptEntity>());
         for(DeptEntity de:status){
+            DeptEntity entity = companyDao.selectid(de.getId());
             de.setDid(de.getId());
+            de.setComopanynoe(entity.getComopanynoe());
+            de.setGid(entity.getGid());
+            de.setComopanytwo(entity.getComopanytwo());
         }
         return status;
     }

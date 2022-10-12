@@ -1,7 +1,11 @@
 package com.lessing.equipment.modules.eq.service.Impl;
 
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lessing.equipment.common.utils.R;
 import com.lessing.equipment.common.utils.RedisUtils;
 import com.lessing.equipment.common.utils.StringUtils;
 import com.lessing.equipment.lib.RequestList;
@@ -26,6 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -47,8 +55,13 @@ public class EqSerivceImpl implements EqService {
     @Autowired
     private RequestList requestList;
 
-    @Value("${openapi.tpurl}")
-    String Url;
+//    @Value("${openapi.tpurl}")
+//    String Url;
+    @Value("${openapi.zpurl}")
+    String zpurl;
+    @Value("${openapi.local}")
+    String local;
+
 
     @Override
     public List<EqEntity> getEq() {
@@ -64,7 +77,7 @@ public class EqSerivceImpl implements EqService {
     }
 
     @Override
-    public List<EqDTO> getEqList(String eSn) {
+    public List<EqDTO> getEqList(String eSn) throws IOException {
         List<EqDTO> eqDTOList =new ArrayList<>();
         List<ProjectEntity> projectEntities = projectDao.selectList(new QueryWrapper<ProjectEntity>()
                 .eq("status",0));
@@ -79,11 +92,14 @@ public class EqSerivceImpl implements EqService {
                 e.setPAddress(eqDTO.getAddress());
                 e.setPName(eqDTO.getName());
                 e.setPId(Long.valueOf(eqDTO.getId()));
+                String s = requestList.DeviceSnap(e);
 //                boolean snap = PTZControlUtil.snap(e.getIp(), e.getUsername(), e.getPassword());
-                boolean snap =false;
-                if(snap){
-                    String url = Url+e.getIp()+".jpg";
-                    eqScaleDao.updateByIp(e.getIp(),url);
+                if(!StringUtils.isEmpty(s)){
+                    download(s, local,e.getIp()+".jpg");
+                    System.out.println("结束");
+//                    String url = Url+e.getIp()+".jpg";
+                    e.setUrl(zpurl+e.getIp()+".jpg");
+                    eqScaleDao.updateByIp(e.getIp(),e.getUrl());
                 }
             }
             eqDTO.setEqList(eqEntities);
@@ -105,6 +121,13 @@ public class EqSerivceImpl implements EqService {
         }
         return page.setRecords(list);
     }
+
+    @Override
+    public List<EqEntity> selectEqlistByRole(Integer gid,Integer one,Integer two,Integer did) {
+        List<EqEntity> list = eqDao.selectEqByRole(gid,one,two,did);
+        return list;
+    }
+
 
     @Override
     public List<EqScaleEntity> getEqScale(String location) {
@@ -151,15 +174,16 @@ public class EqSerivceImpl implements EqService {
 
     @Transactional
     @Override
-    public boolean add(EqEntity eq) {
+    public String add(EqEntity eq) {
         eq.setChannel("0");
-        String addeq = requestList.addeq(eq);
-        if(addeq.equals("0")){
-            redisUtils.set(eq.getIp(),eq);
+        String msg = requestList.addeq(eq);
+        if(msg.equals("操作成功。")){
+            JSONObject jsonObject = requestList.bindDeviceLive(eq);
+            redisUtils.set(eq.getIp(),jsonObject.getString("hls"));
             eqDao.insert(eq);
-            return true;
+            return msg;
         }else {
-            return false;
+            return msg;
         }
     }
 
@@ -176,21 +200,28 @@ public class EqSerivceImpl implements EqService {
     }
 
     @Override
-    public void delete(Integer id) {
-        int eq_id = eqDao.delete(new QueryWrapper<EqEntity>().eq("eq_id", id));
-        if(eq_id > 0){
-            EqEntity eq = eqDao.selectOne(new QueryWrapper<EqEntity>().eq("eq_id", id));
+    public boolean delete(Integer id) {
+        EqEntity eq = eqDao.selectOne(new QueryWrapper<EqEntity>().eq("eq_id", id));
+        if(!ObjectUtils.isEmpty(eq)){
             redisUtils.delete(eq.getIp());
-            if(!ObjectUtils.isEmpty(eq)){
-                requestList.unBindDevice(eq);
+            EqScaleEntity scale = eqScaleDao.selectOne(new QueryWrapper<EqScaleEntity>().eq("eq_id", eq.getEqId()));
+            if(!ObjectUtils.isEmpty(scale)){
+                scale.setEqId(null);
+                eqScaleDao.update(scale,new QueryWrapper<EqScaleEntity>().eq("eq_id",eq.getEqId()));
+            }
+            String s = requestList.unBindDevice(eq);
+            if(!s.equals("0")){
+                return false;
             }
         }
+        eqDao.delete(new QueryWrapper<EqEntity>().eq("eq_id", id));
+        return true;
     }
 
     @Override
     public List<EqEntity> getProjList(String uid) {
         List<EqEntity> eqEntities=new ArrayList<>();
-        List<ProjectEntity> poj = projectDao.selectList(new QueryWrapper<>());
+        List<ProjectEntity> poj = projectDao.selectList(new QueryWrapper<ProjectEntity>().eq("status",0));
         for(ProjectEntity c : poj){
             Set<String> newList = new HashSet<>();
             if(!StringUtils.isEmpty(c.getUsername())){
@@ -262,8 +293,8 @@ public class EqSerivceImpl implements EqService {
 //                            boolean snap = PTZControlUtil.snap(e.getIp(), e.getUsername(), e.getPassword());
                             boolean snap =false;
                             if(snap){
-                                String url = Url+e.getIp()+".jpg";
-                                eqScaleDao.updateByIp(e.getIp(),url);
+//                                String url = Url+e.getIp()+".jpg";
+//                                eqScaleDao.updateByIp(e.getIp(),url);
                             }
                         }
                         eq.setEqList(eqEntities1);
@@ -274,6 +305,92 @@ public class EqSerivceImpl implements EqService {
             }
         }
         return eqEntities;
+    }
+
+//    public static String getfilename(String httpurl,String filename){
+//        try {
+//            //定义一个URL对象，就是你想下载的图片的URL地址
+//            URL url = new URL(httpurl);
+//            //打开连接
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            //设置请求方式为"GET"
+//            conn.setRequestMethod("GET");
+//            //超时响应时间为10秒
+//            conn.setConnectTimeout(10 * 1000);
+//            //通过输入流获取图片数据
+//            InputStream is = conn.getInputStream();
+//            //得到图片的二进制数据，以二进制封装得到数据，具有通用性
+//            byte[] data = readInputStream(is);
+//            //创建一个文件对象用来保存图片，默认保存当前工程根目录，起名叫Copy.jpg
+//            File imageFile = new File("C:\\Users\\admin\\Desktop\\nginx-1.21.1\\img\\"+filename);
+//            //创建输出流
+//            FileOutputStream outStream = new FileOutputStream(imageFile);
+//            //写入数据
+//            outStream.write(data);
+//            //关闭输出流，释放资源
+//            outStream.close();
+//            return filename;
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
+//     return "";
+//    }
+//
+//    public static byte[] readInputStream(InputStream inStream) throws Exception {
+//        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+//        //创建一个Buffer字符串
+//        byte[] buffer = new byte[6024];
+//        //每次读取的字符串长度，如果为-1，代表全部读取完毕
+//        int len;
+//        //使用一个输入流从buffer里把数据读取出来
+//        while ((len = inStream.read(buffer)) != -1) {
+//            //用输出流往buffer里写入数据，中间参数代表从哪个位置开始读，len代表读取的长度
+//            outStream.write(buffer, 0, len);
+//        }
+//        //关闭输入流
+//        inStream.close();
+//        //把outStream里的数据写入内存
+//        return outStream.toByteArray();
+//    }
+
+    public static void download(String urlString, String savePath, String filename) throws IOException {
+        System.out.println("开始："+new Date().getTime());
+        // 构造URL
+        URL url = new URL(urlString);
+        // 打开连接
+        URLConnection con = url.openConnection();
+        //设置请求超时为20s
+        con.setConnectTimeout(20 * 1000);
+        //文件路径不存在 则创建
+        File sf = new File(savePath);
+        if (!sf.exists()) {
+            sf.mkdirs();
+        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("中间："+new Date().getTime());
+        //jdk 1.7 新特性自动关闭
+        try (InputStream in = con.getInputStream(); OutputStream out = new FileOutputStream(sf.getPath() + "\\" + filename)) {
+            //创建缓冲区
+            byte[] buff = new byte[1024];
+            int n;
+            // 开始读取
+            while ((n = in.read(buff)) >= 0) {
+                out.write(buff, 0, n);
+            }
+            System.out.println("结束："+new Date().getTime());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        download("https://lechangecloud.oss-cn-hangzhou.aliyuncs.com/lechange/7E00E86PAJ94EC6_img/Alarm/0/c254c264ee3c49a881e80d70f7414d97.jpg?Expires=1664439664&OSSAccessKeyId=LTAIP4igXeEjYBoG&Signature=sqaJ1KO8SQLwbi3cwGwWNVoQ%2FvE%3D", "C:\\Users\\admin\\Desktop\\zp\\", "121.png");
     }
 
 }

@@ -12,4 +12,5 @@ import java.util.List;
 @Mapper
 public interface DeptDao extends BaseMapper<DeptEntity> {
 
+
 }

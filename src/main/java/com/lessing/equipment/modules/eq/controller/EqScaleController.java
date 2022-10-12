@@ -1,15 +1,24 @@
 package com.lessing.equipment.modules.eq.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.lessing.equipment.common.utils.JwtUtils;
 import com.lessing.equipment.common.utils.R;
 import com.lessing.equipment.common.utils.RedisUtils;
 import com.lessing.equipment.common.utils.StringUtils;
 import com.lessing.equipment.lib.RequestList;
+import com.lessing.equipment.modules.eq.dao.EqScaleDao;
 import com.lessing.equipment.modules.eq.dto.DTO;
 import com.lessing.equipment.modules.eq.dto.RtmpDTO;
 import com.lessing.equipment.modules.eq.entity.EqEntity;
 import com.lessing.equipment.modules.eq.entity.EqScaleEntity;
 import com.lessing.equipment.modules.eq.service.EqService;
+import com.lessing.equipment.modules.sys.dao.ProjectDao;
+import com.lessing.equipment.modules.sys.dto.UserRoleDTO;
+import com.lessing.equipment.modules.sys.entity.ProjectEntity;
+import com.lessing.equipment.modules.sys.entity.UserEntity;
+import com.lessing.equipment.modules.sys.service.ProjectService;
+import com.lessing.equipment.modules.sys.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
@@ -20,6 +29,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +41,13 @@ public class EqScaleController {
     @Autowired
     private EqService eqService;
     @Autowired
+    private ProjectDao projectDao;
+    @Autowired
     private RequestList requestList;
-
+    @Autowired
+    private JwtUtils jwtUtils;
+    @Autowired
+    private UserService userService;
     @Autowired
     RedisUtils redisUtils;
 
@@ -44,7 +59,9 @@ public class EqScaleController {
     @ApiOperation("为设备设置分屏")
     @RequestMapping(value = "/insert",method = RequestMethod.POST)
     @Transactional
-    public R insert(@RequestBody EqScaleEntity scaleEntity){
+    public R insert(@RequestBody EqScaleEntity scaleEntity, HttpServletRequest request){
+        UserRoleDTO uid = jwtUtils.getUid(request);
+        UserEntity userEntity = userService.selectUserOneByUid(uid.getUid());
         //根据分屏id 查询是否绑定了摄像头 如果绑定 先把此摄像头的播放状态改为未绑定
         EqEntity eq =new EqEntity();
 //        RtmpDTO rtmpDTO =new RtmpDTO();
@@ -53,48 +70,70 @@ public class EqScaleController {
         EqScaleEntity scaleOn = eqService.getScaleOn(scaleEntity.getId());
         EqEntity eqByeq = eqService.getEqByeqId(scaleEntity.getEqId());
         if(null != scaleOn.getEqId()){
-            //把绑定的设备解绑
-            eq.setEqId(Long.valueOf(scaleOn.getEqId()));
-            eq.setLiveStatus(0);
-            eqService.updateEq(eq);// 根据分屏id 去修改现绑定的摄像头
+            if(userEntity.getRole() == 0){
+                //把绑定的设备解绑
+                eq.setEqId(Long.valueOf(scaleOn.getEqId()));
+                eq.setLiveStatus(0);
+                eqService.updateEq(eq);// 根据分屏id 去修改现绑定的摄像头
+            }
 
             JSONObject rtmpOne = requestList.getRtmpOne(eqByeq);
-            dto.setUrl(rtmpOne.getString("hls"));
-            dto.setDeviceId(rtmpOne.getString("deviceId"));
+            eqByeq.setUrl(rtmpOne.getString("hls"));
+            eqByeq.setSid(scaleEntity.getId());
+            dto.setDeviceId(eqByeq.getDeviceid());
             map.put("url",dto.getUrl());
             map.put("deviceid",dto.getDeviceId());
 
         }else {
             JSONObject rtmpOne = requestList.getRtmpOne(eqByeq);
-            dto.setUrl(rtmpOne.getString("hls"));
-            dto.setDeviceId(rtmpOne.getString("deviceId"));
+            eqByeq.setUrl(rtmpOne.getString("hls"));
+            eqByeq.setSid(scaleEntity.getId());
+            dto.setDeviceId(eqByeq.getDeviceid());
             map.put("url",dto.getUrl());
             map.put("deviceid",dto.getDeviceId());
-            redisUtils.set(eqByeq.getIp(),dto);
+            redisUtils.set(eqByeq.getIp(),eqByeq);
+        }
+        if(null != eqByeq.getPId()){
+            ProjectEntity scale = projectDao.selectOne(new QueryWrapper<ProjectEntity>().eq("id", eqByeq.getPId()));
+            if(!ObjectUtils.isEmpty(scale)){
+                eqByeq.setPName(scale.getName());
+            }
         }
         //如果没绑定分屏 就给绑定摄像头 并把该摄像头的播放状态改为 绑定中
-        int i = eqService.updateScale(scaleEntity);
-        if(i>0){
-            eq.setEqId(Long.valueOf(scaleEntity.getEqId()));
-            eq.setLiveStatus(1);
-            eqService.updateEq(eq);
-            return R.ok().put("data",map);
-        }
+          if(userEntity.getRole() != 0){
+              return R.ok().put("data",eqByeq);
+          }else {
+              int i = eqService.updateScale(scaleEntity);
+              if(i>0){
+                  eq.setEqId(Long.valueOf(scaleEntity.getEqId()));
+                  eq.setLiveStatus(1);
+                  eqService.updateEq(eq);
+                  return R.ok().put("data",eqByeq);
+              }
+          }
         return R.error();
     }
 
     @ApiOperation("取消绑定设备")
     @RequestMapping(value = "/delete",method = RequestMethod.POST)
     @Transactional
-    public R delete(@RequestBody EqScaleEntity scaleEntity){
+    public R delete(@RequestBody EqScaleEntity scaleEntity, HttpServletRequest request){
+        UserRoleDTO uid = jwtUtils.getUid(request);
+        UserEntity userEntity = userService.selectUserOneByUid(uid.getUid());
         EqScaleEntity scale = eqService.selectScale(scaleEntity.getId());
         EqEntity eq =new EqEntity();
-        eq.setLiveStatus(0);
-        eq.setEqId(Long.valueOf(scale.getEqId()));
-        int i = eqService.updateEq(eq);
-        if(i>0){
-            scale.setEqId(null);
-            eqService.updateScale(scale);
+        if(null != scale.getEqId()){
+            eq.setEqId(Long.valueOf(scale.getEqId()));
+        }
+        if(userEntity.getRole() != 0) {
+            return R.ok();
+        }else {
+            eq.setLiveStatus(0);
+            int i = eqService.updateEq(eq);
+            if(i>0){
+                scale.setEqId(null);
+                eqService.updateScale(scale);
+            }
         }
         return R.ok();
     }

@@ -1,14 +1,13 @@
 package com.lessing.equipment.modules.sys.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.lessing.equipment.common.utils.ExcelTemplateUtil;
-import com.lessing.equipment.common.utils.ExcelUtils;
-import com.lessing.equipment.common.utils.R;
-import com.lessing.equipment.common.utils.StringUtils;
+import com.lessing.equipment.common.utils.*;
 import com.lessing.equipment.modules.eq.dto.EqListDTO;
 import com.lessing.equipment.modules.eq.entity.EqEntity;
 import com.lessing.equipment.modules.eq.service.EqService;
+import com.lessing.equipment.modules.sys.dto.UserListDTO;
 import com.lessing.equipment.modules.sys.service.ProjectService;
+import com.lessing.equipment.modules.sys.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -55,13 +55,11 @@ public class CameraController {
     @RequestMapping(value = "/add",method = RequestMethod.POST)
     @ApiOperation("新增设备")
     public R add(@RequestBody EqEntity eq){
-        boolean add = eqService.add(eq);
-        if(add){
-            return R.ok();
-        }else {
-            return R.error();
+        String msg = eqService.add(eq);
+        if(msg.equals("操作成功。")){
+            return R.ok().put("test",msg);
         }
-
+        return R.error().put("test",msg);
     }
 
     @RequestMapping(value = "/update",method = RequestMethod.POST)
@@ -76,8 +74,11 @@ public class CameraController {
     @RequestMapping(value = "/delete",method = RequestMethod.GET)
     @ApiOperation("删除设备")
     public R delete(Integer id){
-        eqService.delete(id);
-        return R.ok();
+        boolean delete = eqService.delete(id);
+        if(delete){
+            return R.ok();
+        }
+        return R.error("删除失败");
     }
 
     @RequestMapping(value="/eqDownloadExcel",method = RequestMethod.GET)
@@ -115,7 +116,10 @@ public class CameraController {
                         StringUtils.isEmpty(eq.getUsername()) || StringUtils.isEmpty(eq.getPassword())){
                     return R.error("字段全为必填项");
                 }
-                eqService.add(eq);
+              String add = eqService.add(eq);
+                if(!add.equals("操作成功。")){
+                    return R.error().put("test",add);
+                }
             }
             return R.ok();
         }catch (Exception e){

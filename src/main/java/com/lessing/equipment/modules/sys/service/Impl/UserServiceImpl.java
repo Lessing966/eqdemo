@@ -53,7 +53,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean update(UserEntity user) {
         user.setUpdateTime(new Date()); 
-        user.setPassword(MD5Utils.MD5Encode(user.getPassword()));
+//        if(user.getPassword()){
+//            user.setPassword(MD5Utils.MD5Encode(user.getPassword()));
+//        }
         int i = userDao.updateById(user);
         if(i>0){
             return true;
@@ -149,5 +151,15 @@ public class UserServiceImpl implements UserService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public UserEntity selectUser(String phone) {
+        return userDao.selectOne(new QueryWrapper<UserEntity>().eq("phone",phone));
+    }
+
+    @Override
+    public UserEntity selectcode(String code) {
+        return userDao.selectOne(new QueryWrapper<UserEntity>().eq("code",code));
     }
 }

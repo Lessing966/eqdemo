@@ -27,6 +27,7 @@
         <where>
             <if test="user.userName != null and user.userName != '' ">and u.user_name like concat('%',#{user.userName},'%')</if>
             <if test="user.status != null">and u.`status` =#{user.status}</if>
+            and u.id >1
         </where>
 --         SELECT
 --         u.id,
@@ -94,10 +95,10 @@
     <select id="selectByArchitrue" resultType="com.lessing.equipment.modules.sys.dto.UserNameDTO" parameterType="com.lessing.equipment.modules.sys.dto.ArchitecDTO">
         select * from sys_user
         <where>
-            <if test="gid != null">and group_id = #{gid}</if>
-            <if test="companyoneId != null">and companyone_id = #{companyoneId}</if>
-            <if test="companytwoId != null">and companytwo_id = #{companytwoId}</if>
-            <if test="did != null">and dept_id = #{did}</if>
+            <if test="gid != 0">and group_id = #{gid}</if>
+            <if test="companyoneId != 0">and companyone_id = #{companyoneId}</if>
+            <if test="companytwoId != 0">and companytwo_id = #{companytwoId}</if>
+            <if test="did != 0">and dept_id = #{did}</if>
             and status = 0
         </where>
     </select>

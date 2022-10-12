@@ -14,4 +14,12 @@ public class  DeptEntity {
 
     @TableField(exist = false)
     private Integer did;
+
+    @TableField(exist = false)
+    private Integer comopanynoe;
+    @TableField(exist = false)
+    private Integer comopanytwo;
+    @TableField(exist = false)
+    private Integer gid;
+
 }

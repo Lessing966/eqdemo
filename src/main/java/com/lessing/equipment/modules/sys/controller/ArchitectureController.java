@@ -79,7 +79,9 @@ public class ArchitectureController {
         //获取当前用户id和角色
         UserRoleDTO user = jwtUtils.getUid(request);
         if(null == gid){
-            return R.ok().put("data",null);
+//            return R.ok().put("data",null);
+            comBiGidOneList= architectureService.getComBiGidAll();
+            return R.ok().put("data",comBiGidOneList);
         }
         if(gid == -1){
             comBiGidOneList= architectureService.getComBiGidAll();  
@@ -101,9 +103,9 @@ public class ArchitectureController {
     public R getOneCom(Integer oneid){
         List<CompanyEntity> groupOneList =null;
         if(null == oneid){
-//            groupOneList = architectureService.getComTwoAll();
-            return R.ok().put("data",null);
-        }else {
+            groupOneList = architectureService.getComTwoAll();
+            return R.ok().put("data",groupOneList);
+        } else {
             groupOneList = architectureService.getComTwo(oneid);
         }
         if(oneid == -1){
@@ -118,7 +120,9 @@ public class ArchitectureController {
     public R getDeptList(Integer twoid){
         List<DeptEntity> groupOneList=null;
         if(null == twoid){
-            return R.ok().put("data",null);
+            groupOneList= architectureService.getDeptListAll();
+            return R.ok().put("data",groupOneList);
+//            return R.ok().put("data",null);
 //            groupOneList= architectureService.getDeptListAll();
         }else {
             groupOneList= architectureService.getDeptList(twoid);

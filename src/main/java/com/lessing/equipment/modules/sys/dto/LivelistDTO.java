@@ -22,6 +22,8 @@ public class LivelistDTO {
     @ApiModelProperty(value = "设备通道号")
     private String channelId;
     @ApiModelProperty(value = "项目地址")
+    private String pname;
+    @ApiModelProperty(value = "项目地址")
     private String paddress;
     @ApiModelProperty(value = "设备编号")
     private String cameraSn;

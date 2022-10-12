@@ -42,6 +42,7 @@ public class RequestJson {
         JSONObject jsonObject = JSONObject.parseObject(JSON.toJSONString(stringObjectMap));
         ResponseEntity<String> jsonObjectResponseEntity = restTemplate.postForEntity("https://openapi.lechange.cn/openapi/accessToken", jsonObject, String.class);
         JSONObject json = JSONObject.parseObject(jsonObjectResponseEntity.getBody()).getJSONObject("result").getJSONObject("data");
+        System.out.println(json);
         //拿到token 存放redis
         redisUtils.set("accesstoken",json.getString("accessToken"),json.getLong("expireTime"));
         return json.getString("accessToken");
@@ -56,7 +57,7 @@ public class RequestJson {
         StringBuilder paramString = new StringBuilder();
         paramString.append("time:").append(time).append(",");
         paramString.append("nonce:").append(nonce).append(",");
-        paramString.append("appSecret:").append("7efb1c11960a4a4188654ea55079aa");
+        paramString.append("appSecret:").append("5fea457f3b584c9484d9cfb1b47003");
 
         String sign = "";
         // 计算MD5得值
@@ -69,7 +70,7 @@ public class RequestJson {
         Map<String, Object> systemMap = new HashMap<String, Object>();
         systemMap.put("ver", "1.0");
         systemMap.put("sign", sign);
-        systemMap.put("appId", "lcdc677243e9a94cca");
+        systemMap.put("appId", "lc445a9b44fea54878");
         systemMap.put("nonce", nonce);
         systemMap.put("time", time);
 

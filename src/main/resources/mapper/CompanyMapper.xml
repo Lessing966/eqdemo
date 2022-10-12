@@ -13,4 +13,20 @@
     <select id="selectListtwoBygroup" parameterType="int" resultType="com.lessing.equipment.modules.sys.entity.CompanyEntity">
         select * from sys_company where group_id =#{id} and company_id != 0 or company_id is NULL
     </select>
+
+    <select id="selectid" parameterType="int" resultType="com.lessing.equipment.modules.sys.entity.DeptEntity">
+        SELECT
+            d.*,
+            two.id comopanytwo ,
+            noe.id comopanynoe ,
+            g.id gid
+        FROM
+            sys_dept d
+                LEFT JOIN sys_company two ON d.company_id = two.id
+                LEFT JOIN sys_company noe ON two.company_id = noe.id
+                LEFT JOIN sys_group g on noe.group_id = g.id
+        <where>
+            <if test="did != null">and  d.id =#{did}</if>
+        </where>
+    </select>
 </mapper>

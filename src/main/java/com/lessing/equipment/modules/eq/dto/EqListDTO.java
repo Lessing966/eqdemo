@@ -13,6 +13,8 @@ public class EqListDTO {
     private String ip;
     @ApiModelProperty(value = "账号")
     private String username;
+    @ApiModelProperty(value = "序列号")
+    private String deviceid;
     @ApiModelProperty(value = "密码")
     private String password;
     @ApiModelProperty(value = "项目名称")

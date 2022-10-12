@@ -43,21 +43,22 @@ public class UserEntity {
     private String phone;
 
     @ApiModelProperty(value = "部门ID")
-    @TableField(updateStrategy = FieldStrategy.IGNORED )
+//    @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Integer deptId;
     @ApiModelProperty(value = "一级公司ID")
-    @TableField(updateStrategy = FieldStrategy.IGNORED )
+//    @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Integer companyoneId;
     @ApiModelProperty(value = "二级公司ID")
-    @TableField(updateStrategy = FieldStrategy.IGNORED )
+//    @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Integer companytwoId;
     @ApiModelProperty(value = "集团ID")
-    @TableField(updateStrategy = FieldStrategy.IGNORED )
+//    @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Integer groupId;
     @ApiModelProperty(value = "用户状态")
     private Integer status;
 
     @ApiModelProperty(value = "登录次数标题")
+
     @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Integer num;
 

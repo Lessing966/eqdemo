@@ -13,6 +13,7 @@
         eq.ip ip,
         eq.username,
         eq.`password`,
+        eq.deviceid,
         p.`name` pname,
         p.address paddress,
         eq.eq_status status,

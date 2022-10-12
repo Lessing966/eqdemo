@@ -35,4 +35,9 @@ public interface UserService {
 
     boolean save(UserEntity user);
 
+    UserEntity selectUser(String phone);
+
+    UserEntity selectcode(String code);
+
+
 }

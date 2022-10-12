@@ -1,12 +1,12 @@
 package com.lessing.equipment.modules.sys.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.lessing.equipment.common.utils.ExcelTemplateUtil;
-import com.lessing.equipment.common.utils.ExcelUtils;
-import com.lessing.equipment.common.utils.R;
-import com.lessing.equipment.common.utils.StringUtils;
+import com.lessing.equipment.common.utils.*;
+import com.lessing.equipment.modules.eq.entity.EqEntity;
+import com.lessing.equipment.modules.eq.service.EqService;
 import com.lessing.equipment.modules.sys.dto.CameraDTO;
 import com.lessing.equipment.modules.sys.dto.UserListDTO;
+import com.lessing.equipment.modules.sys.dto.UserRoleDTO;
 import com.lessing.equipment.modules.sys.entity.UserEntity;
 import com.lessing.equipment.modules.sys.service.UserService;
 import io.swagger.annotations.Api;
@@ -17,9 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,6 +47,14 @@ public class SysUserController {
     @ApiOperation("添加用户")
     @RequestMapping(value = "/addUser",method = RequestMethod.POST)
     public R addUser(@RequestBody UserEntity user){
+        UserEntity phone = userService.selectUser(user.getPhone());
+        if(null != phone){
+            return R.error("手机号重复");
+        }
+        UserEntity code = userService.selectcode(user.getCode());
+        if(null != code){
+            return R.error("工号重复");
+        }
         if(userService.addUser(user)){
             return R.ok();
         }
@@ -79,7 +89,7 @@ public class SysUserController {
     @RequestMapping(value = "/reset",method = RequestMethod.POST)
     public R reset(@RequestBody UserEntity user){
         UserListDTO userdto = userService.selectUserOne(Math.toIntExact(user.getId()));
-        user.setPassword(userdto.getCode());
+        user.setPassword(MD5Utils.MD5Encode(userdto.getCode()));
         if(userService.update(user)){
             return R.ok();
         }
@@ -121,6 +131,14 @@ public class SysUserController {
                         StringUtils.isEmpty(user.getPhone()) || StringUtils.isEmpty(user.getCode())){
                     return R.error("字段全为必填项");
                 }
+                UserEntity userEntity = userService.selectUser(user.getPhone());
+                if(!ObjectUtils.isEmpty(userEntity)){
+                    return R.error("手机号不可重复");
+                }
+                UserEntity entity = userService.selectcode(user.getCode());
+                if(!ObjectUtils.isEmpty(entity)){
+                    return R.error("工号不可重复");
+                }
                 userService.addUser(user);
             }
             return R.ok();
@@ -130,11 +148,48 @@ public class SysUserController {
         }
     }
 
+    @Autowired
+    private JwtUtils jwtUtils;
+    @Autowired
+    private EqService eqService;
+
     @RequestMapping(value = "/getEq",method = RequestMethod.GET)
     @ApiOperation("查询用户绑定设备")
     public R getEq(String uid){
-        List<CameraDTO> list = userService.selectEq(uid);
-        return R.ok().put("data",list);
+        List<EqEntity> eqEntity=null;
+//        UserRoleDTO user = jwtUtils.getUid(request);
+        UserEntity userEntity = userService.selectUserOneByUid(uid);
+        switch (userEntity.getRole()){
+            case 0: //超级管理员
+                System.out.println("超级管理员");
+                //超级管理员查询所有设备
+                eqEntity = eqService.getEq();
+                break;
+            case 1: //集团管理员
+                System.out.println("集团管理员");
+                eqEntity = eqService.selectEqlistByRole(userEntity.getGroupId(),0,0,0);
+                break;
+            case 2: //一级管理员
+                System.out.println("一级管理员");
+                eqEntity = eqService.selectEqlistByRole(0,userEntity.getCompanyoneId(),0,0);
+                break;
+            case 3: //二级管理员
+                System.out.println("二级管理员");
+                eqEntity = eqService.selectEqlistByRole(0,0,userEntity.getCompanytwoId(),0);
+                break;
+            case 4: //部门管理员
+                System.out.println("部门管理员");
+                eqEntity = eqService.selectEqlistByRole(0,0,0,userEntity.getDeptId());
+                break;
+            default:
+                //普通员工
+                System.out.println("普通员工");
+                eqEntity =eqService.getProjList(String.valueOf(userEntity.getId()));
+                break;
+        }
+//        List<CameraDTO> list = userService.selectEq(uid);
+        return R.ok().put("data",eqEntity);
     }
+
 
 }

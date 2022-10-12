@@ -33,7 +33,7 @@ public class EqEntity {
     @ApiModelProperty(value = "设备密码")
     private String password;
 
-    @TableField(exist = false)
+//    @TableField(exist = false)
     private String url;
 
     @TableField(exist = false)
@@ -45,7 +45,7 @@ public class EqEntity {
     private String channel;
 
     @ApiModelProperty(value = "所属项目ID")
-    @TableField(updateStrategy = FieldStrategy.IGNORED )
+//    @TableField(updateStrategy = FieldStrategy.IGNORED )
     private Long pId;
 
     @TableField(exist = false)
@@ -60,6 +60,9 @@ public class EqEntity {
     @ApiModelProperty(value = "备注")
     @TableField(exist = false)
     private String note;
+
+    @TableField(exist = false)
+    private Long sid;
 
     @ApiModelProperty(value = "播放状态")
     private Integer liveStatus;

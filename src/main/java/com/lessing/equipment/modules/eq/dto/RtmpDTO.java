@@ -11,6 +11,7 @@ public class RtmpDTO {
     private String username;
     @ApiModelProperty(value = "设备密码")
     private String password;
+    private String deviceid;
     @ApiModelProperty(value = "通道号")
     private String channel;
 }

@@ -11,4 +11,33 @@
         </where>
     </select>
 
+    <select id="selectEqByRole" parameterType="integer" resultType="com.lessing.equipment.modules.eq.entity.EqEntity">
+        SELECT
+            e.eq_id,
+            e.camera_sn,
+            e.ip,
+            e.deviceid,
+            e.channel,
+            e.username,
+            e.`password`,
+            e.live_status,
+            e.note,
+            e.url,
+            e.eq_status,
+            p.address pAddress,
+            p.id pId,
+            p.name pName
+        FROM
+            sys_eq e
+                INNER JOIN sys_project p ON  p.id = e.p_id
+        <where>
+            <if test="gid !=0 ">and p.group_id =#{gid}</if>
+            <if test="one !=0">and p.cpevel_one =#{one}</if>
+            <if test="two !=0">and p.cpevel_two =#{two}</if>
+            <if test="did !=0">and p.dept_id =#{did}</if>
+            and e.eq_status = 0
+--             and p.status = 0
+        </where>
+    </select>
+
 </mapper>

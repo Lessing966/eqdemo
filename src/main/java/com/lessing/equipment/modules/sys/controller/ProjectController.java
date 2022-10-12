@@ -2,6 +2,7 @@ package com.lessing.equipment.modules.sys.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lessing.equipment.common.utils.R;
+import com.lessing.equipment.common.utils.StringUtils;
 import com.lessing.equipment.modules.sys.dto.ArchitecDTO;
 import com.lessing.equipment.modules.sys.dto.ProjectListDTO;
 import com.lessing.equipment.modules.sys.entity.ProjectEntity;
@@ -10,6 +11,7 @@ import com.lessing.equipment.modules.sys.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -35,8 +37,8 @@ public class ProjectController {
     @RequestMapping(value = "/getUsername",method = RequestMethod.POST)
     @ApiOperation("根据部门id查询用户：architecDTO")
     public R getUsername(@RequestBody ArchitecDTO architecDTO){
-        if(null == architecDTO){
-            return R.error("参数错误");
+        if(architecDTO.getGid() == 0 && architecDTO.getCompanyoneId() == 0 && architecDTO.getCompanytwoId() == 0 && architecDTO.getDid() ==0){
+            return R.ok().put("data",new String[0]);
         }
         return R.ok().put("data",userService.selectUserList(architecDTO));
     }
