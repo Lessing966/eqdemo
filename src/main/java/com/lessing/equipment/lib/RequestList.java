@@ -40,6 +40,7 @@ public class RequestList {
         System.out.println(jsonObject);
         log.debug("设备抓怕接口传入对象{} ",jsonObject);
         jsonObjectResponseEntity = restTemplate.postForEntity("https://openapi.lechange.cn/openapi/setDeviceSnapEnhanced", jsonObject, String.class);
+        System.err.println(jsonObjectResponseEntity);
         String jsonObject1 = JSONObject.parseObject(jsonObjectResponseEntity.getBody()).getJSONObject("result").getString("code");
         if(jsonObject1.equals("DV1007")){
             return "";

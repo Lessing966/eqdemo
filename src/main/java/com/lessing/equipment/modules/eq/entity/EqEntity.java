@@ -58,7 +58,7 @@ public class EqEntity {
     private Integer eqStatus;
 
     @ApiModelProperty(value = "备注")
-    @TableField(exist = false)
+//    @TableField(exist = false)
     private String note;
 
     @TableField(exist = false)
@@ -66,4 +66,7 @@ public class EqEntity {
 
     @ApiModelProperty(value = "播放状态")
     private Integer liveStatus;
+
+    @TableField(exist = false)
+    private boolean offline;
 }

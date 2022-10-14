@@ -57,6 +57,7 @@ public class EqSerivceImpl implements EqService {
 
 //    @Value("${openapi.tpurl}")
 //    String Url;
+
     @Value("${openapi.zpurl}")
     String zpurl;
     @Value("${openapi.local}")
@@ -79,8 +80,7 @@ public class EqSerivceImpl implements EqService {
     @Override
     public List<EqDTO> getEqList(String eSn) throws IOException {
         List<EqDTO> eqDTOList =new ArrayList<>();
-        List<ProjectEntity> projectEntities = projectDao.selectList(new QueryWrapper<ProjectEntity>()
-                .eq("status",0));
+        List<ProjectEntity> projectEntities = projectDao.selectList(new QueryWrapper<ProjectEntity>().eq("status",0));
         for(ProjectEntity po:projectEntities){
             EqDTO eqDTO=new EqDTO();
             eqDTO.setAddress(po.getAddress());
@@ -92,14 +92,19 @@ public class EqSerivceImpl implements EqService {
                 e.setPAddress(eqDTO.getAddress());
                 e.setPName(eqDTO.getName());
                 e.setPId(Long.valueOf(eqDTO.getId()));
-                String s = requestList.DeviceSnap(e);
+                if(StringUtils.isEmpty(e.getUrl())){
+                    String s = requestList.DeviceSnap(e);
 //                boolean snap = PTZControlUtil.snap(e.getIp(), e.getUsername(), e.getPassword());
-                if(!StringUtils.isEmpty(s)){
-                    download(s, local,e.getIp()+".jpg");
-                    System.out.println("结束");
+                    if(!StringUtils.isEmpty(s)){
+                        download(s, local,e.getIp()+".jpg");
+                        System.out.println("结束");
 //                    String url = Url+e.getIp()+".jpg";
-                    e.setUrl(zpurl+e.getIp()+".jpg");
-                    eqScaleDao.updateByIp(e.getIp(),e.getUrl());
+                        e.setUrl(zpurl+e.getIp()+".jpg");
+                        eqScaleDao.updateByIp(e.getIp(),e.getUrl());
+                    }else {
+                        e.setUrl(zpurl+"err"+".png");
+                        e.setOffline(true);
+                    }
                 }
             }
             eqDTO.setEqList(eqEntities);
@@ -126,6 +131,47 @@ public class EqSerivceImpl implements EqService {
     public List<EqEntity> selectEqlistByRole(Integer gid,Integer one,Integer two,Integer did) {
         List<EqEntity> list = eqDao.selectEqByRole(gid,one,two,did);
         return list;
+    }
+
+    @Override
+    public List<EqDTO> selectEqlistByRoleapp(Integer groupId, Integer noeid, Integer twoid, Integer did,String sn) {
+        List<EqDTO> eqDTOList =new ArrayList<>();
+        List<ProjectEntity> projectEntities =new ArrayList<>();
+        projectEntities = projectDao.selectby(groupId,noeid,twoid,did);
+        for(ProjectEntity p:projectEntities){
+            EqDTO eqDTO =new EqDTO();
+            List<EqEntity> eqEntities = eqDao.selectEqList(String.valueOf(p.getId()),sn);
+            for(EqEntity e:eqEntities){
+                eqDTO.setAddress(p.getAddress());
+                eqDTO.setStatus(p.getStatus());
+                eqDTO.setName(p.getName());
+                eqDTO.setId(p.getId());
+//                if(StringUtils.isEmpty(e.getUrl())){
+                    String s = requestList.DeviceSnap(e);
+                    if(!StringUtils.isEmpty(s)){
+                        try {
+                            download(s, local,e.getIp()+".jpg");
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        System.out.println("结束");
+                        e.setUrl(zpurl+e.getIp()+".jpg");
+                        eqScaleDao.updateByIp(e.getIp(),e.getUrl());
+                    }else {
+                        e.setUrl(zpurl+"err"+".png");
+                        e.setOffline(true);
+                    }
+//                }
+                e.setPAddress(eqDTO.getAddress());
+                e.setPName(eqDTO.getName());
+                e.setPId(Long.valueOf(eqDTO.getId()));
+            }
+            eqDTO.setEqList(eqEntities);
+            if(null != eqDTO.getId()){
+                eqDTOList.add(eqDTO);
+            }
+        }
+        return eqDTOList;
     }
 
 
@@ -259,53 +305,116 @@ public class EqSerivceImpl implements EqService {
     @Override
     public List<EqDTO> getProjEqList(String eSn,String uid) {
         List<EqDTO> eqEntities=new ArrayList<>();
-        List<ProjectEntity> poj = projectDao.selectList(new QueryWrapper<>());
-        for(ProjectEntity c : poj){
+        List<ProjectEntity> poj = projectDao.selectList(new QueryWrapper<ProjectEntity>().eq("status",0));
+        for(ProjectEntity c : poj) {
             Set<String> newList = new HashSet<>();
-            if(!StringUtils.isEmpty(c.getUsername())){
+            if (!StringUtils.isEmpty(c.getUsername())) {
                 String substring = c.getUsername().substring(1, c.getUsername().length() - 1);
                 String[] split = substring.split(",");
                 List<String> list1 = Arrays.asList(split);
                 newList.addAll(list1);
+
                 UserEntity u = userDao.selectOne(new QueryWrapper<UserEntity>()
-                        .eq("user_name",c.getHead()));
+                        .eq("user_name", c.getHead()));
                 UserEntity u1 = userDao.selectOne(new QueryWrapper<UserEntity>()
-                        .eq("user_name",c.getHon()));
-                if(null != u){
+                        .eq("user_name", c.getHon()));
+                if (null != u) {
                     newList.add(String.valueOf(u.getId()));
                 }
-                if(null != u1){
+                if (null != u1) {
                     newList.add(String.valueOf(u1.getId()));
                 }
-                String[] strings1 = newList.toArray(new String[]{});
-                for(int i = 0 ; i <strings1.length ; i++ ){
-                    if(strings1[i].equals(uid)){
-                        EqDTO eq =new EqDTO();
-                        eq.setId(c.getId());
-                        eq.setAddress(c.getAddress());
-                        eq.setStatus(c.getStatus());
-                        eq.setName(c.getName());
-                        List<EqEntity> eqEntities1 = eqDao.selectEqList(String.valueOf(c.getId()),eSn);
-                        for(EqEntity e:eqEntities1){
-                            e.setPName(eq.getName());
-                            e.setPId(Long.valueOf(eq.getId()));
-                            e.setPAddress(eq.getAddress());
-//                            boolean snap = PTZControlUtil.snap(e.getIp(), e.getUsername(), e.getPassword());
-                            boolean snap =false;
-                            if(snap){
-//                                String url = Url+e.getIp()+".jpg";
-//                                eqScaleDao.updateByIp(e.getIp(),url);
-                            }
-                        }
-                        eq.setEqList(eqEntities1);
-                        eqEntities.add(eq);
-                    }
+                System.out.println(newList);
 
+                String[] strings1 = newList.toArray(new String[]{});
+                    for(int i = 0 ; i <strings1.length ; i++ ){
+                        if(strings1[i].equals(uid)){
+                            EqDTO eq =new EqDTO();
+                            List<EqEntity> eqEntities1 = eqDao.selectEqList(String.valueOf(c.getId()),eSn);
+                            for(EqEntity e:eqEntities1){
+                                eq.setId(c.getId());
+                                eq.setAddress(c.getAddress());
+                                eq.setStatus(c.getStatus());
+                                eq.setName(c.getName());
+                                e.setPName(eq.getName());
+                                e.setPId(Long.valueOf(eq.getId()));
+                                e.setPAddress(eq.getAddress());
+//                                if(StringUtils.isEmpty(e.getUrl())){
+                                    String s = requestList.DeviceSnap(e);
+                                    if(!StringUtils.isEmpty(s)){
+                                        try {
+                                            download(s, local,e.getIp()+".jpg");
+                                        } catch (IOException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+                                        System.out.println("结束");
+                                        e.setUrl(zpurl+e.getIp()+".jpg");
+                                        eqScaleDao.updateByIp(e.getIp(),e.getUrl());
+                                    }else {
+                                        e.setUrl(zpurl+"err"+".png");
+                                        e.setOffline(true);
+                                    }
+//                                }
+                            }
+                            eq.setEqList(eqEntities1);
+                            if(null != eq.getId()){
+                                eqEntities.add(eq);
+                            }
+
+                        }
+                    }
                 }
             }
-        }
         return eqEntities;
     }
+
+
+    
+//            for(ProjectEntity c : poj){
+//        Set<String> newList = new HashSet<>();
+//        if(!StringUtils.isEmpty(c.getUsername())){
+//            String substring = c.getUsername().substring(1, c.getUsername().length() - 1);
+//            String[] split = substring.split(",");
+//            List<String> list1 = Arrays.asList(split);
+//            newList.addAll(list1);
+//            UserEntity u = userDao.selectOne(new QueryWrapper<UserEntity>()
+//                    .eq("user_name",c.getHead()));
+//            UserEntity u1 = userDao.selectOne(new QueryWrapper<UserEntity>()
+//                    .eq("user_name",c.getHon()));
+//            if(null != u){
+//                newList.add(String.valueOf(u.getId()));
+//            }
+//            if(null != u1){
+//                newList.add(String.valueOf(u1.getId()));
+//            }
+//            String[] strings1 = newList.toArray(new String[]{});
+//            for(int i = 0 ; i <strings1.length ; i++ ){
+//                if(strings1[i].equals(uid)){
+//                    EqDTO eq =new EqDTO();
+//                    eq.setId(c.getId());
+//                    eq.setAddress(c.getAddress());
+//                    eq.setStatus(c.getStatus());
+//                    eq.setName(c.getName());
+//                    List<EqEntity> eqEntities1 = eqDao.selectEqList(String.valueOf(c.getId()),eSn);
+//                    for(EqEntity e:eqEntities1){
+//                        e.setPName(eq.getName());
+//                        e.setPId(Long.valueOf(eq.getId()));
+//                        e.setPAddress(eq.getAddress());
+////                            boolean snap = PTZControlUtil.snap(e.getIp(), e.getUsername(), e.getPassword());
+//                        boolean snap =false;
+//                        if(snap){
+////                                String url = Url+e.getIp()+".jpg";
+////                                eqScaleDao.updateByIp(e.getIp(),url);
+//                        }
+//                    }
+//                    eq.setEqList(eqEntities1);
+//                    eqEntities.add(eq);
+//                }
+//
+//            }
+//        }
+//    }
+
 
 //    public static String getfilename(String httpurl,String filename){
 //        try {

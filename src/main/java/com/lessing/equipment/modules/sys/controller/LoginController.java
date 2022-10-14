@@ -36,6 +36,9 @@ public class LoginController {
             return R.error(500,"错误参数");
         }
         UserEntity userBase = userService.getUserBase(loginDTO.getPhone());
+//        if(userBase.getRole() != 0){
+//            return R.error(501,"用户无权限");
+//        }
         if(ObjectUtils.isEmpty(userBase)){
             return R.error(501,"没有此用户");
         }

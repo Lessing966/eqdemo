@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lessing.equipment.common.utils.JwtUtils;
 import com.lessing.equipment.common.utils.R;
 import com.lessing.equipment.common.utils.RedisUtils;
+import com.lessing.equipment.common.utils.StringUtils;
 import com.lessing.equipment.lib.RequestList;
 import com.lessing.equipment.modules.app.dao.AlramListDTO;
 import com.lessing.equipment.modules.app.dto.EqDTO;
@@ -13,6 +14,7 @@ import com.lessing.equipment.modules.eq.dto.RtmpDTO;
 import com.lessing.equipment.modules.eq.entity.EqEntity;
 import com.lessing.equipment.modules.eq.entity.EqalrmEnyity;
 import com.lessing.equipment.modules.eq.service.EqService;
+import com.lessing.equipment.modules.eq.service.Impl.EqSerivceImpl;
 import com.lessing.equipment.modules.sys.dto.UserRoleDTO;
 import com.lessing.equipment.modules.sys.entity.UserEntity;
 import com.lessing.equipment.modules.sys.service.UserService;
@@ -46,6 +48,10 @@ public class AppController {
     private RedisUtils redisUtils;
     @Autowired
     private RestTemplate restTemplate;
+    @Value("${openapi.zpurl}")
+    String zpurl;
+    @Value("${openapi.local}")
+    String local;
 
     @Autowired
     private RequestList requestList;
@@ -65,7 +71,16 @@ public class AppController {
     @RequestMapping(value = "/setDeviceSnapEnhanced",method = RequestMethod.POST)
     public R setDeviceSnapEnhanced(@RequestBody EqEntity eq){
         String s = requestList.DeviceSnap(eq);
-        return R.ok(s);
+        if(!StringUtils.isEmpty(s)) {
+            try {
+                EqSerivceImpl.download(s, local, eq.getIp() + ".jpg");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("结束");
+            return R.ok(zpurl+eq.getIp()+".jpg");
+        }
+        return R.ok(zpurl+"err"+".png");
     }
 
     @ApiOperation("保存头像")
@@ -88,11 +103,34 @@ public class AppController {
     public R getliveList(String eSn ,HttpServletRequest request) throws IOException {
         List<EqDTO> eqEntity=null;
         UserRoleDTO user = jwtUtils.getUid(request);
-        if(null != user.getRole() && user.getRole() == 0){
-            //超级管理员查询所有设备
-            eqEntity = eqService.getEqList(eSn);
-        }else {
-            eqEntity =eqService.getProjEqList(eSn,user.getUid());
+        UserEntity userEntity = userService.selectUserOneByUid(user.getUid());
+        switch (user.getRole()){
+            case 0: //超级管理员
+                System.out.println("超级管理员");
+                //超级管理员查询所有设备
+                eqEntity = eqService.getEqList(eSn);
+                break;
+            case 1: //集团管理员
+                System.out.println("集团管理员");
+                eqEntity = eqService.selectEqlistByRoleapp(userEntity.getGroupId(),0,0,0,eSn);
+                break;
+            case 2: //一级管理员
+                System.out.println("一级管理员");
+                eqEntity = eqService.selectEqlistByRoleapp(0,userEntity.getCompanyoneId(),0,0,eSn);
+                break;
+            case 3: //二级管理员
+                System.out.println("二级管理员");
+                eqEntity = eqService.selectEqlistByRoleapp(0,0,userEntity.getCompanytwoId(),0,eSn);
+                break;
+            case 4: //部门管理员
+                System.out.println("部门管理员");
+                eqEntity = eqService.selectEqlistByRoleapp(0,0,0,userEntity.getDeptId(),eSn);
+                break;
+            default:
+                //普通员工
+                System.out.println("普通员工");
+                eqEntity =eqService.getProjEqList(eSn,user.getUid());
+                break;
         }
         return R.ok().put("data",eqEntity);
     }
@@ -127,21 +165,25 @@ public class AppController {
     @ApiOperation("查看单个设备播放")
     @RequestMapping(value = "getRemp",method = RequestMethod.POST)
     public R getRemp(@RequestBody RtmpDTO rtmp){
+        DTO dto =new DTO();
         //查询redis中是否有再推流的ip 如果有 就直接返回 没有就推流并放入redis~
         String s = redisUtils.get(rtmp.getIp());
-        DTO dto = JSONObject.parseObject(s, DTO.class);
-        if(null != dto.getDeviceId()){
-            return R.ok().put("data",dto);
-        }
-        EqEntity eq =new EqEntity();
-        eq.setDeviceid(rtmp.getDeviceid());
-        eq.setChannel("0");
-        JSONObject rtmpOne = requestList.getRtmpOne(eq);
-        dto.setUrl(rtmpOne.getString("hls"));
-        dto.setDeviceId(rtmpOne.getString("deviceId"));
-        //将返回的播放地址存放
-        redisUtils.set(rtmp.getIp(),dto);
+        if(null != s){
+            dto = JSONObject.parseObject(s, DTO.class);
+            if(null != dto.getDeviceId()){
+                return R.ok().put("data",dto);
+            }
+        }else {
+            EqEntity eq =new EqEntity();
+            eq.setDeviceid(rtmp.getDeviceid());
+            eq.setChannel("0");
+            JSONObject rtmpOne = requestList.getRtmpOne(eq);
+            dto.setUrl(rtmpOne.getString("hls"));
+            dto.setDeviceId(rtmpOne.getString("deviceId"));
+            //将返回的播放地址存放
+            redisUtils.set(rtmp.getIp(),dto);
 
+        }
         return R.ok().put("data",dto);
     }
 

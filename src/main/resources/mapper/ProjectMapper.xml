@@ -31,6 +31,17 @@
     </where>
     </select>
 
+    <select id="selectby" resultType="com.lessing.equipment.modules.sys.entity.ProjectEntity" parameterType="integer">
+        select * from sys_project
+        <where>
+            <if test="gid !=0">and group_id =#{gid}</if>
+            <if test="one !=0">and cpevel_one =#{one}</if>
+            <if test="two !=0">and cpevel_two =#{two}</if>
+            <if test="did !=0">and dept_id =#{did}</if>
+            and status = 0
+        </where>
+    </select>
+
     <select id="selectPojOne" resultType="com.lessing.equipment.modules.sys.dto.ProjectListDTO" parameterType="integer">
         SELECT
             p.id,

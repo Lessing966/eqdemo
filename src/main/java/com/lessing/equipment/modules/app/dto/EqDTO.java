@@ -12,4 +12,5 @@ public class EqDTO {
     private String address;
     private Integer status;
     private List<EqEntity> eqList;
+
 }

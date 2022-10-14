@@ -40,9 +40,9 @@ spring:
         max-idle: 10      # 连接池中的最大空闲连接
         min-idle: 5       # 连接 池中的最小空闲连接     shanghaiyidian  47.97.217.26    124.221.255.113
   datasource:
-    url: jdbc:mysql://124.221.255.113:3306/dmdata?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true&serverTimezone=Hongkong&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://47.97.217.26:3306/dmdata?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true&serverTimezone=Hongkong&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: shanghaiyidian
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       connection-test-query: SELECT 1 FROM DUAL
@@ -56,8 +56,8 @@ openapi:
   rympurl: http://localhost:8082/camera/cameras
   closeurl: http://localhost:8082/camera/close
 #  tpurl: 192.168.2.26:8080/
-  local: C:\Users\admin\Desktop\nginx-1.21.1\img\
-  zpurl: http://192.168.2.26:8082/img/
+  local: C:\Users\Administrator\Desktop\nginx-1.23.1\img
+  zpurl: https://camera.inesa-yszlkj.com/imgs/
 
 
 #token:

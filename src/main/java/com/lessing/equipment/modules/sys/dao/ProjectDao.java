@@ -6,6 +6,7 @@ import com.lessing.equipment.modules.app.dao.AlramListDTO;
 import com.lessing.equipment.modules.sys.dto.PojNameListDTO;
 import com.lessing.equipment.modules.sys.dto.ProjectListDTO;
 import com.lessing.equipment.modules.sys.entity.ProjectEntity;
+import org.apache.ibatis.annotations.Param;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -18,5 +19,7 @@ public interface ProjectDao extends BaseMapper<ProjectEntity> {
     ProjectListDTO selectPojOne(Integer id);
 
     List<PojNameListDTO> selectPojNameList();
+
+    List<ProjectEntity> selectby(@Param("gid") Integer gid,@Param("one") Integer noe,@Param("two") Integer two,@Param("did") Integer did);
 
 }

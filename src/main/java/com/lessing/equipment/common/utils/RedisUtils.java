@@ -47,7 +47,7 @@ public class RedisUtils {
 	}
 
 	public void set(String key, Object value) {
-		set(key, value, DEFAULT_EXPIRE);
+		set(key, value, NOT_EXPIRE);
 	}
 
 	public <T> T get(String key, Class<T> clazz, long expire) {

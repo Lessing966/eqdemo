@@ -50,4 +50,6 @@ public interface EqService {
 
     List<EqEntity> selectEqlistByRole(Integer gid,Integer one,Integer two,Integer did);
 
+    List<EqDTO> selectEqlistByRoleapp(Integer groupId, Integer i, Integer i1, Integer i2,String sn);
+
 }
